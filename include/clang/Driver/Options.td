@@ -2047,6 +2047,10 @@ def mxnack : Flag<["-"], "mxnack">, Group<m_amdgpu_Features_Group>,
   HelpText<"Enable XNACK (AMDGPU only)">;
 def mno_xnack : Flag<["-"], "mno-xnack">, Group<m_amdgpu_Features_Group>,
   HelpText<"Disable XNACK (AMDGPU only)">;
+def mamdgpu_max_group_size_EQ : Joined<["-"], "mamdgpu-max-group-size=">,
+  Group<m_amdgpu_Features_Group>,
+  HelpText<"Set the maximum group size for kernels">,
+  MetaVarName<"<size>">;
 
 def faltivec : Flag<["-"], "faltivec">, Group<f_Group>, Flags<[DriverOption]>;
 def fno_altivec : Flag<["-"], "fno-altivec">, Group<f_Group>, Flags<[DriverOption]>;
