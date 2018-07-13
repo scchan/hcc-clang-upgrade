@@ -7714,6 +7714,8 @@ void AMDGPUTargetCodeGenInfo::setTargetAttributes(
       F->addFnAttr("amdgpu-flat-work-group-size", AttrVal);
     } else
       assert(Max == 0 && "Max must be zero");
+  } else if (M.getLangOpts().CPlusPlusAMP) {
+    F->addFnAttr("amdgpu-flat-work-group-size", "1024,1024");
   }
 
   if (const auto *Attr = FD->getAttr<AMDGPUWavesPerEUAttr>()) {
