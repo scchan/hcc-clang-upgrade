@@ -136,91 +136,6 @@ static void HCPassOptions(const ArgList &Args, ArgStringList &CmdArgs) {
   }
 }
 
-void HCC::HCKernelAssemble::ConstructJob(Compilation &C, const JobAction &JA,
-                                    const InputInfo &Output,
-                                    const InputInfoList &Inputs,
-                                    const ArgList &Args,
-                                    const char *LinkingOutput) const {
-  assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
-
-  ArgStringList CmdArgs;
-  for (InputInfoList::const_iterator
-         it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
-    const InputInfo &II = *it;
-    if (II.isFilename())
-      CmdArgs.push_back(II.getFilename());
-    else
-      II.getInputArg().renderAsInput(Args, CmdArgs);
-  }
-
-  if (Output.isFilename())
-    CmdArgs.push_back(Output.getFilename());
-  else
-    Output.getInputArg().renderAsInput(Args, CmdArgs);
-
-  // locate where the command is
-  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("hc-kernel-assemble"));
-
-  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
-}
-
-void HCC::HCHostAssemble::ConstructJob(Compilation &C, const JobAction &JA,
-                                  const InputInfo &Output,
-                                  const InputInfoList &Inputs,
-                                  const ArgList &Args,
-                                  const char *LinkingOutput) const {
-  assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
-
-  ArgStringList CmdArgs;
-  for (InputInfoList::const_iterator
-         it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
-    const InputInfo &II = *it;
-    if (II.isFilename())
-      CmdArgs.push_back(II.getFilename());
-    else
-      II.getInputArg().renderAsInput(Args, CmdArgs);
-  }
-
-  if (Output.isFilename())
-    CmdArgs.push_back(Output.getFilename());
-  else
-    Output.getInputArg().renderAsInput(Args, CmdArgs);
-
-  // decide which options gets passed through
-  HCPassOptions(Args, CmdArgs);
-
-  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("hc-host-assemble"));
-
-  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
-}
-
-void HCC::CXXAMPAssemble::ConstructJob(Compilation &C, const JobAction &JA,
-                                  const InputInfo &Output,
-                                  const InputInfoList &Inputs,
-                                  const ArgList &Args,
-                                  const char *LinkingOutput) const {
-  assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
-
-  ArgStringList CmdArgs;
-  for (InputInfoList::const_iterator
-         it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
-    const InputInfo &II = *it;
-    if (II.isFilename())
-      CmdArgs.push_back(II.getFilename());
-    else
-      II.getInputArg().renderAsInput(Args, CmdArgs);
-  }
-
-  if (Output.isFilename())
-    CmdArgs.push_back(Output.getFilename());
-  else
-    Output.getInputArg().renderAsInput(Args, CmdArgs);
-
-  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("clamp-assemble"));
-
-  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
-}
-
 namespace
 {
     struct Process_deleter {
@@ -391,6 +306,97 @@ namespace
             validate_and_add_to_command(AMDGPUTarget, C, Args, CmdArgs);
         }
     }
+}
+
+void HCC::HCKernelAssemble::ConstructJob(Compilation &C, const JobAction &JA,
+                                    const InputInfo &Output,
+                                    const InputInfoList &Inputs,
+                                    const ArgList &Args,
+                                    const char *LinkingOutput) const {
+  assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
+
+  ArgStringList CmdArgs;
+  for (InputInfoList::const_iterator
+         it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
+    const InputInfo &II = *it;
+    if (II.isFilename())
+      CmdArgs.push_back(II.getFilename());
+    else
+      II.getInputArg().renderAsInput(Args, CmdArgs);
+  }
+
+  if (Output.isFilename())
+    CmdArgs.push_back(Output.getFilename());
+  else
+    Output.getInputArg().renderAsInput(Args, CmdArgs);
+
+  if (Args.hasArg(options::OPT_amdgpu_obj_codegen)) {
+    CmdArgs.push_back("--early_finalize");
+    // add the amdgpu target args
+    construct_amdgpu_target_cmdargs(C, getToolChain(), Args, CmdArgs);
+  }
+
+  // locate where the command is
+  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("hc-kernel-assemble"));
+
+  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+}
+
+void HCC::HCHostAssemble::ConstructJob(Compilation &C, const JobAction &JA,
+                                  const InputInfo &Output,
+                                  const InputInfoList &Inputs,
+                                  const ArgList &Args,
+                                  const char *LinkingOutput) const {
+  assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
+
+  ArgStringList CmdArgs;
+  for (InputInfoList::const_iterator
+         it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
+    const InputInfo &II = *it;
+    if (II.isFilename())
+      CmdArgs.push_back(II.getFilename());
+    else
+      II.getInputArg().renderAsInput(Args, CmdArgs);
+  }
+
+  if (Output.isFilename())
+    CmdArgs.push_back(Output.getFilename());
+  else
+    Output.getInputArg().renderAsInput(Args, CmdArgs);
+
+  // decide which options gets passed through
+  HCPassOptions(Args, CmdArgs);
+
+  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("hc-host-assemble"));
+
+  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+}
+
+void HCC::CXXAMPAssemble::ConstructJob(Compilation &C, const JobAction &JA,
+                                  const InputInfo &Output,
+                                  const InputInfoList &Inputs,
+                                  const ArgList &Args,
+                                  const char *LinkingOutput) const {
+  assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
+
+  ArgStringList CmdArgs;
+  for (InputInfoList::const_iterator
+         it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
+    const InputInfo &II = *it;
+    if (II.isFilename())
+      CmdArgs.push_back(II.getFilename());
+    else
+      II.getInputArg().renderAsInput(Args, CmdArgs);
+  }
+
+  if (Output.isFilename())
+    CmdArgs.push_back(Output.getFilename());
+  else
+    Output.getInputArg().renderAsInput(Args, CmdArgs);
+
+  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("clamp-assemble"));
+
+  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
 }
 
 #ifndef HCC_TOOLCHAIN_RHEL
