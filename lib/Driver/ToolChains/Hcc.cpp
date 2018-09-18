@@ -394,6 +394,8 @@ void HCC::CXXAMPAssemble::ConstructJob(Compilation &C, const JobAction &JA,
   else
     Output.getInputArg().renderAsInput(Args, CmdArgs);
 
+  CmdArgs.push_back(".kernel_ir");
+
   const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("clamp-assemble"));
 
   C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
