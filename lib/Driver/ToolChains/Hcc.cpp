@@ -284,6 +284,142 @@ namespace
         std::sort(TargetVec.begin(), TargetVec.end());
         TargetVec.erase(unique(TargetVec.begin(), TargetVec.end()), TargetVec.end());
     }
+<<<<<<< HEAD
+=======
+
+    void construct_amdgpu_target_cmdargs(
+        Compilation &C,
+        const ToolChain& tc,
+        const ArgList &Args,
+        ArgStringList &CmdArgs)
+    {
+        // specify AMDGPU target
+        constexpr const char auto_tgt[] = "auto";
+        
+        #if !defined(HCC_AMDGPU_TARGET)
+            #define HCC_AMDGPU_TARGET auto_tgt
+        #endif
+
+        auto AMDGPUTargetVector =
+            Args.getAllArgValues(options::OPT_amdgpu_target_EQ);
+
+        if (AMDGPUTargetVector.empty()) {
+            // split HCC_AMDGPU_TARGET list up
+            AMDGPUTargetVector = split_gfx_list(HCC_AMDGPU_TARGET, ' ');
+        }
+
+        const auto cnt = std::count(
+            AMDGPUTargetVector.cbegin(), AMDGPUTargetVector.cend(), auto_tgt);
+
+        if (cnt > 1) C.getDriver().Diag(diag::warn_amdgpu_target_auto_nonsingular);
+        if (cnt == AMDGPUTargetVector.size()) {
+            AMDGPUTargetVector = detect_and_add_targets(C, tc);
+        }
+        AMDGPUTargetVector.erase(
+            std::remove(
+                AMDGPUTargetVector.begin(), AMDGPUTargetVector.end(), auto_tgt),
+            AMDGPUTargetVector.end());
+
+        remove_duplicate_targets(AMDGPUTargetVector);
+
+        for (auto&& AMDGPUTarget : AMDGPUTargetVector) {
+            validate_and_add_to_command(AMDGPUTarget, C, Args, CmdArgs);
+        }
+    }
+}
+
+void HCC::HCKernelAssemble::ConstructJob(Compilation &C, const JobAction &JA,
+                                    const InputInfo &Output,
+                                    const InputInfoList &Inputs,
+                                    const ArgList &Args,
+                                    const char *LinkingOutput) const {
+  assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
+
+  ArgStringList CmdArgs;
+  for (InputInfoList::const_iterator
+         it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
+    const InputInfo &II = *it;
+    if (II.isFilename())
+      CmdArgs.push_back(II.getFilename());
+    else
+      II.getInputArg().renderAsInput(Args, CmdArgs);
+  }
+
+  if (Output.isFilename())
+    CmdArgs.push_back(Output.getFilename());
+  else
+    Output.getInputArg().renderAsInput(Args, CmdArgs);
+
+  if (Args.hasArg(options::OPT_amdgpu_obj_codegen)) {
+    CmdArgs.push_back("--early_finalize");
+    // add the amdgpu target args
+    construct_amdgpu_target_cmdargs(C, getToolChain(), Args, CmdArgs);
+  }
+
+  // locate where the command is
+  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("hc-kernel-assemble"));
+
+  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+}
+
+void HCC::HCHostAssemble::ConstructJob(Compilation &C, const JobAction &JA,
+                                  const InputInfo &Output,
+                                  const InputInfoList &Inputs,
+                                  const ArgList &Args,
+                                  const char *LinkingOutput) const {
+  assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
+
+  ArgStringList CmdArgs;
+  for (InputInfoList::const_iterator
+         it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
+    const InputInfo &II = *it;
+    if (II.isFilename())
+      CmdArgs.push_back(II.getFilename());
+    else
+      II.getInputArg().renderAsInput(Args, CmdArgs);
+  }
+
+  if (Output.isFilename())
+    CmdArgs.push_back(Output.getFilename());
+  else
+    Output.getInputArg().renderAsInput(Args, CmdArgs);
+
+  // decide which options gets passed through
+  HCPassOptions(Args, CmdArgs);
+
+  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("hc-host-assemble"));
+
+  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+}
+
+void HCC::CXXAMPAssemble::ConstructJob(Compilation &C, const JobAction &JA,
+                                  const InputInfo &Output,
+                                  const InputInfoList &Inputs,
+                                  const ArgList &Args,
+                                  const char *LinkingOutput) const {
+  assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
+
+  ArgStringList CmdArgs;
+  for (InputInfoList::const_iterator
+         it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
+    const InputInfo &II = *it;
+    if (II.isFilename())
+      CmdArgs.push_back(II.getFilename());
+    else
+      II.getInputArg().renderAsInput(Args, CmdArgs);
+  }
+
+  if (Output.isFilename())
+    CmdArgs.push_back(Output.getFilename());
+  else
+    Output.getInputArg().renderAsInput(Args, CmdArgs);
+
+  CmdArgs.push_back(".kernel_ir");
+
+  const char *Exec = Args.MakeArgString(getToolChain().GetProgramPath("clamp-assemble"));
+
+  C.addCommand(llvm::make_unique<Command>(JA, *this, Exec, CmdArgs, Inputs));
+>>>>>>> 06953a9... embed IR into .kernel_ir instead of .kernel
 }
 
 #ifndef HCC_TOOLCHAIN_RHEL
