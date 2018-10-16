@@ -350,7 +350,7 @@ void HCC::HCKernelAssemble::ConstructJob(Compilation &C, const JobAction &JA,
   else
     Output.getInputArg().renderAsInput(Args, CmdArgs);
 
-  if (Args.hasArg(options::OPT_amdgpu_obj_codegen)) {
+  if (!Args.hasFlag(options::OPT_fgpu_rdc, options::OPT_fno_gpu_rdc, true)) {
     CmdArgs.push_back("--early_finalize");
     // add the amdgpu target args
     construct_amdgpu_target_cmdargs(C, getToolChain(), Args, CmdArgs);
