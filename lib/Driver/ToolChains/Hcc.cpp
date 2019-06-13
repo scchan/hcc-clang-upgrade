@@ -76,8 +76,8 @@ void HCCInstallationDetector::AddHCCLibArgs(const llvm::opt::ArgList &Args, llvm
       CmdArgs.push_back("-lstdc++");
     }
 
-    CmdArgs.push_back(Args.MakeArgString("-L" + LibPath));
-    CmdArgs.push_back(Args.MakeArgString("--rpath=" + LibPath));
+    //CmdArgs.push_back(Args.MakeArgString("-L" + LibPath));
+    //CmdArgs.push_back(Args.MakeArgString("--rpath=" + LibPath));
 
     for (auto &lib: SystemLibs)
       CmdArgs.push_back(lib);
